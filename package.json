@@ -1,0 +1,33 @@
+{
+  "name": "bluebird-retry",
+  "version": "1.0.0",
+  "description": "bluebird extension retry() method accepting parameterless functions and/or bluebird promises",
+  "keywords": [
+    "nodejs",
+    "node",
+    "promise",
+    "promises",
+    "bluebird",
+    "extension",
+    "bluebirdjs",
+    "retry",
+    "bluebird-retry",
+    "promise-retry"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "npm install && ./node_modules/mocha/bin/_mocha --no-timeouts tests.js"
+  },
+  "author": "NeverOddOrEven",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NeverOddOrEven/bluebird-retry-js.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.5.1"
+  },
+  "devDependencies": {
+    "mocha": "^4.0.1"
+  }
+}
