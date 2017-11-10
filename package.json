@@ -1,6 +1,6 @@
 {
   "name": "bluebird-retry-js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "bluebird extension retry() method accepting parameterless functions and/or bluebird promises",
   "keywords": [
     "nodejs",
