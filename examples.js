@@ -1,18 +1,7 @@
-# bluebird-retry-js
-
-A retry method that accepts parameterless plain-old-javascript functions and bluebird promises. Specify the maximum number of retries, as well as `constant`, `linear`, `quadratic`, and `exponential` backoff functions. If desired, you may cap the maximum delay between attempts for `linear`, `quadratic`, and `exponential` scaling. 
-
-## Installation
-```
-npm install --save bluebird-retry-js
-```
-
-## Usage
-```
 'use strict;'
 
 const bluebird = require('bluebird');
-const bluebirdretryjs = require('bluebird-retry-js');
+const bluebirdretryjs = require('./bluebird.retry');
 
 var resolves_ok = bluebird.resolve('resolved');
 var resolves_rejected = bluebird.reject('rejected');
@@ -93,5 +82,3 @@ bluebirdretryjs.retry(fn_throws, 4, bluebirdretryjs.backoff.exponential(1))
   .catch(RetryAttemptsExceeded, (err) => {
     console.error("Exponential: " + err.message);
   });
-
-```
