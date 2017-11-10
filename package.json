@@ -1,5 +1,5 @@
 {
-  "name": "bluebird-retry",
+  "name": "bluebird-retry-js",
   "version": "1.0.0",
   "description": "bluebird extension retry() method accepting parameterless functions and/or bluebird promises",
   "keywords": [
@@ -16,7 +16,8 @@
   ],
   "main": "index.js",
   "scripts": {
-    "test": "npm install && ./node_modules/mocha/bin/_mocha --no-timeouts tests.js"
+    "test": "npm install && ./node_modules/mocha/bin/_mocha --no-timeouts tests.js",
+    "examples": "npm install && node ./examples"
   },
   "author": "NeverOddOrEven",
   "repository": {

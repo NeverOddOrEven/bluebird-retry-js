@@ -6,20 +6,22 @@ const util = require('util');
 const blue_ext = require('./bluebird.retry');
 
 const attempts = 3;
-const calc_duration_sec = function(attempts, attempt = 0) {
-  if (attempt == attempts)
-    return 0;
-  
-    return (attempt * attempt) + calc_duration_sec(attempts, attempt + 1);
+const calc_default_duration_sec = function(attempts, attempt = 0) {
+  if (attempt <= 0)
+    return calc_default_duration_sec(attempts, attempt + 1);
+  else if (attempt == attempts)
+    return 1;
+  else
+    return 1 + calc_default_duration_sec(attempts, attempt + 1);
 }
 
-const expected_duration_all_attempts_failed_ms = calc_duration_sec(attempts) * 1000;
-const expected_duration_last_attempt_succeeds_ms = calc_duration_sec(attempts - 1) * 1000;
+const expected_duration_all_attempts_failed_ms = calc_default_duration_sec(attempts) * 1000;
+const expected_duration_last_attempt_succeeds_ms = calc_default_duration_sec(attempts - 1) * 1000;
 
 describe('retry() a function that throws an exception after the default number of attempts', () => { 
   it('should reject with RetryAttemptsExceeded error', () => {
     return blue_ext.retry(() => { throw new Error("foo")})
-      .catch((err) => assert.equal(true, err instanceof blue_ext.Types.RetryAttemptsExceeded))
+      .catch((err) => assert.equal(true, err instanceof blue_ext.exceptions.RetryAttemptsExceeded))
   });
 
   it('should reject after only 1 attempt', () => {
@@ -61,7 +63,7 @@ describe('retry() a function that', () => {
         .then((result) => assert.equal(result, 'success'))
         .finally(() => {
           var duration = Date.now() - start_time;
-          assert.equal(true, (duration > 900 && duration < 1100))
+          assert.equal(true, (duration > (expected_duration_last_attempt_succeeds_ms - 100) && duration < (expected_duration_last_attempt_succeeds_ms + 100)))
         });
     });
   })
@@ -81,7 +83,6 @@ describe('retry() a function that', () => {
         .then((result) => assert.equal(result, 'success'))
         .finally(() => {
           var duration = Date.now() - start_time;
-          // should be rough
           assert.equal(true, (duration > (expected_duration_last_attempt_succeeds_ms - 100) && duration < (expected_duration_last_attempt_succeeds_ms + 100)))
         });
     });
@@ -91,7 +92,7 @@ describe('retry() a function that', () => {
 describe('retry() a promise that rejects after the default number of attempts', () => {
   it('should reject with RetryAttemptsExceeded error', () => {
     return blue_ext.retry(bluebird.reject('Foo'))
-      .catch((err) => assert.equal(true, err instanceof blue_ext.Types.RetryAttemptsExceeded))
+      .catch((err) => assert.equal(true, err instanceof blue_ext.exceptions.RetryAttemptsExceeded))
   });
   it('should reject after only 1 attempt', () => {
     return blue_ext.retry(bluebird.reject('Foo'))
