@@ -33,6 +33,21 @@ describe('retry() a function that throws an exception after the default number o
   });
 });
 
+describe('retry() a function that throws an exception after the default number of attempts', () => { 
+  it('should reject with PredicateViolation error', () => {
+    return blue_ext.predicatedRetry(() => { throw new Error("foo")})
+      .catch((err) => assert.equal(true, err instanceof blue_ext.exceptions.PredicateViolation))
+  });
+
+  it('should reject after only 1 attempt', () => {
+    return blue_ext.predicatedRetry(() => { throw new Error("foo")})
+      .catch((err) => {
+        assert.equal(1, err.attempts);
+        assert.equal(1, err.nested.length);
+      });
+  });
+});
+
 describe('retry() a function that ' + util.format('fails all %d attempts', attempts), () => {
   it(util.format('should reject after %d attempts and ~%d milliseconds', attempts, expected_duration_all_attempts_failed_ms), () => {
     var start_time = Date.now();
@@ -124,9 +139,37 @@ describe('retry() a promise that resolves', () => {
   })
 });
 
+describe('predicatedRetry() a promise that resolves', () => {
+  it('should succeed', () => {
+    return blue_ext.predicatedRetry(bluebird.resolve('success'), (attempts) => attempts > 3)
+      .then((result) => assert.equal(result, 'success'))
+  })
+});
+
+describe('ensure the 1st attempt (0th try) always executes', () => {
+  it('should succeed when the max retry attempts is 0', () => {
+    return blue_ext.retry(bluebird.resolve('success'), 0)
+      .then((result) => assert.equal(result, 'success'))
+  })
+});
+
+describe('ensure the 1st attempt (0th try) always executes', () => {
+  it('should succeed even though the predicate evaluates to true', () => {
+    return blue_ext.predicatedRetry(bluebird.resolve('success'), () => true)
+      .then((result) => assert.equal(result, 'success'))
+  })
+});
+
 describe('retry() a parameterless function that returns a value', () => {
   it('should succeed', () => {
     return blue_ext.retry(() => 'success', attempts)
+      .then((result) => assert.equal(result, 'success'))
+  })
+});
+
+describe('predicatedRetry() a parameterless function that returns a value', () => {
+  it('should succeed', () => {
+    return blue_ext.predicatedRetry(() => 'success')
       .then((result) => assert.equal(result, 'success'))
   })
 });
@@ -141,3 +184,12 @@ describe('retry() a parameterized function that returns a value', () => {
   })
 });
 
+describe('predicatedRetry() a failing promise that stops after 3 tries with a custom predicate', () => {
+  it('should fail', () => {
+    return blue_ext.predicatedRetry(bluebird.reject('fail'), (attempt) => { return attempt >= 3; })
+      .then((result) => bluebird.reject("retry() resolved successfully, when it should have failed"))
+      .catch((err) => {
+        assert.equal(true, err instanceof blue_ext.exceptions.PredicateViolation)
+      })
+  })
+});

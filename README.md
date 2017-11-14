@@ -1,6 +1,11 @@
 # bluebird-retry-js
 
-A retry method that accepts parameterless plain-old-javascript functions and bluebird promises. Specify the maximum number of retries, as well as `constant`, `linear`, `quadratic`, and `exponential` backoff functions. If desired, you may cap the maximum delay between attempts for `linear`, `quadratic`, and `exponential` scaling. 
+A retry method that accepts parameterless plain-old-javascript functions and bluebird promises. 
+
+Accepts a maximum number of attempts, or a termination predicate.
+
+You can scale the retry times with `constant`, `linear`, `quadratic`, and `exponential` backoff functions. If desired, you may cap the maximum delay between attempts for `linear`, `quadratic`, and `exponential` scaling.
+
 
 ## Installation
 ```
@@ -21,6 +26,7 @@ var fn_ok = () => { return "success" };
 var fn_throws = () => { throw new Error("rejected"); };
 
 const RetryAttemptsExceeded = bluebirdretryjs.exceptions.RetryAttemptsExceeded;
+const PredicateViolation = bluebirdretryjs.exceptions.PredicateViolation;
 
 bluebirdretryjs.retry(resolves_ok)
   .then((result) => console.log(result))
@@ -31,6 +37,15 @@ bluebirdretryjs.retry(resolves_ok)
 bluebirdretryjs.retry(fn_ok)
   .then((result) => console.log(result))
   .catch(RetryAttemptsExceeded, (err) => {
+    console.error(err.message);
+  });
+
+bluebirdretryjs.predicatedRetry(bluebird.resolve('predicate example success'), (retryAttemptIndex) => retryAttemptIndex >= 1)
+  .then((result) => console.log(result))
+
+bluebirdretryjs.predicatedRetry(bluebird.reject('predicate example rejection'), (retryAttemptIndex) => retryAttemptIndex >= 1)
+  .then((result) => console.log(result))
+  .catch(PredicateViolation, (err) => {
     console.error(err.message);
   });
 

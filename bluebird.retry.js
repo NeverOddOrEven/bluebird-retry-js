@@ -52,14 +52,14 @@ function exponential(delayInSeconds = 1, maxDelayInSeconds = 60) {
 }
 
 /**
- * retry w/exponential back-off
+ * basic retry with scalable backoff and max attempts
  * 
  * @param {any} methodOrPromise 
- * @param {number} [max_retry_attempts=1]
+ * @param {number} [maxRetryAttempts=1]
  * @param {Object} [backoff=constant]
  * @returns {bluebird}
  */
-function retry(methodOrPromise, max_retry_attempts = 1, backoff = constant()) {
+function retry(methodOrPromise, maxRetryAttempts = 1, backoff = constant()) {
   const errors = [];
 
   const start_time = Date.now();
@@ -69,8 +69,8 @@ function retry(methodOrPromise, max_retry_attempts = 1, backoff = constant()) {
 
     var delay = backoff.get_delay_ms(zero_based_attempt);
   
-    if (attempt > max_retry_attempts) 
-      return bluebird.reject(Object.freeze(new RetryAttemptsExceeded(max_retry_attempts, errors, start_time, Date.now())));
+    if (zero_based_attempt != 0 && attempt > maxRetryAttempts) 
+      return bluebird.reject(Object.freeze(new RetryAttemptsExceeded(maxRetryAttempts, errors, start_time, Date.now())));
 
     var isPromise = bluebird.is(methodOrPromise);
     var isFunction = !isPromise && (methodOrPromise instanceof Function) && methodOrPromise.length === 0;
@@ -87,6 +87,44 @@ function retry(methodOrPromise, max_retry_attempts = 1, backoff = constant()) {
 
   return check(1);
 }
+
+/**
+ * basic retry with scalable backoff and predicate that receives the attempt # via parameter, fail if predicate evaluates to true
+ * 
+ * @param {any} methodOrPromise 
+ * @param {Function} [predicate]
+ * @param {Object} [backoff=constant]
+ * @returns {bluebird}
+ */
+function predicatedRetry(methodOrPromise, predicate = (retryAttemptIndex) => retryAttemptIndex >= 1, backoff = constant()) {
+  const errors = [];
+
+  const start_time = Date.now();
+
+  function check(attempt) {
+    var zero_based_attempt = attempt - 1;
+
+    var delay = backoff.get_delay_ms(zero_based_attempt);
+  
+    if (zero_based_attempt != 0 && predicate(zero_based_attempt)) 
+      return bluebird.reject(Object.freeze(new PredicateViolation(zero_based_attempt, errors, start_time, Date.now())));
+
+    var isPromise = bluebird.is(methodOrPromise);
+    var isFunction = !isPromise && (methodOrPromise instanceof Function) && methodOrPromise.length === 0;
+
+    if (!(isPromise || isFunction)) 
+      return bluebird.reject(new TypeError("methodOrPromise must be a Bluebird promise or parameterless javascript Function"));
+
+    return bluebird.resolve(isFunction ? bluebird.try(methodOrPromise) : methodOrPromise)
+      .catch((err) => {
+        errors.push((err instanceof Error) ? err : new Error(err));
+        return bluebird.delay(delay).then(() => check(attempt + 1));
+      })
+  }
+
+  return check(1);
+}
+
 /**
  * 
  * 
@@ -103,13 +141,29 @@ function RetryAttemptsExceeded(max_retry_attempts, errors, start_time, end_time)
 }
 util.inherits(RetryAttemptsExceeded, Error);
 
+/**
+ * 
+ * 
+ * @param {Error[]} errors 
+ */
 
+function PredicateViolation(attempt, errors, start_time, end_time) {
+  Error.captureStackTrace(this, this.constructor);
+  this.name = this.constructor.name;
+  this.duration = end_time - start_time;
+  this.attempts = attempt;
+  this.message = util.format("Predicate failed after %d attempt(s) in %d milliseconds", this.attempts, this.duration);
+  this.nested = errors;
+}
+util.inherits(PredicateViolation, Error);
 
 module.exports = {
   retry: retry,
+  predicatedRetry: predicatedRetry,
   backoff: { constant, linear, quadratic, exponential },
   exceptions: {
-    RetryAttemptsExceeded: RetryAttemptsExceeded
+    RetryAttemptsExceeded: RetryAttemptsExceeded,
+    PredicateViolation: PredicateViolation
   }
 }
 
