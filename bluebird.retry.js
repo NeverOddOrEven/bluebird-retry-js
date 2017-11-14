@@ -117,7 +117,7 @@ function predicatedRetry(methodOrPromise, predicate = (retryAttemptIndex) => ret
 
     return bluebird.resolve(isFunction ? bluebird.try(methodOrPromise) : methodOrPromise)
       .catch((err) => {
-        errors.push((err instanceof Error) ? err : new Error(err));
+        errors.push(err);
         return bluebird.delay(delay).then(() => check(attempt + 1));
       })
   }
