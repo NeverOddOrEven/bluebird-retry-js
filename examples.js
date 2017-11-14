@@ -10,6 +10,7 @@ var fn_ok = () => { return "success" };
 var fn_throws = () => { throw new Error("rejected"); };
 
 const RetryAttemptsExceeded = bluebirdretryjs.exceptions.RetryAttemptsExceeded;
+const PredicateViolation = bluebirdretryjs.exceptions.PredicateViolation;
 
 bluebirdretryjs.retry(resolves_ok)
   .then((result) => console.log(result))
@@ -20,6 +21,15 @@ bluebirdretryjs.retry(resolves_ok)
 bluebirdretryjs.retry(fn_ok)
   .then((result) => console.log(result))
   .catch(RetryAttemptsExceeded, (err) => {
+    console.error(err.message);
+  });
+
+bluebirdretryjs.predicatedRetry(bluebird.resolve('predicate example success'), (retryAttemptIndex) => retryAttemptIndex >= 1)
+  .then((result) => console.log(result))
+
+bluebirdretryjs.predicatedRetry(bluebird.reject('predicate example rejection'), (retryAttemptIndex) => retryAttemptIndex >= 1)
+  .then((result) => console.log(result))
+  .catch(PredicateViolation, (err) => {
     console.error(err.message);
   });
 
@@ -82,3 +92,4 @@ bluebirdretryjs.retry(fn_throws, 4, bluebirdretryjs.backoff.exponential(1))
   .catch(RetryAttemptsExceeded, (err) => {
     console.error("Exponential: " + err.message);
   });
+
