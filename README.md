@@ -8,12 +8,12 @@ You can scale the retry times with `constant`, `linear`, `quadratic`, and `expon
 
 
 ## Installation
-```
+```sh
 npm install --save bluebird-retry-js
 ```
 
 ## Usage
-```
+```js
 'use strict;'
 
 const bluebird = require('bluebird');
